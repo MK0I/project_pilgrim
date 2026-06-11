@@ -1,4 +1,5 @@
 using UnityEngine;
+using static UnityEngine.LowLevelPhysics2D.PhysicsShape;
 
 public class ground_check : MonoBehaviour
 {
@@ -9,7 +10,6 @@ public class ground_check : MonoBehaviour
     }
 
     // Inspector Settings and Fine Tuning
-
     [Header("Shape Type Settings")]
     public shapeType shape = shapeType.Capsule;
 
@@ -20,17 +20,25 @@ public class ground_check : MonoBehaviour
     public LayerMask groundLayer;
     public Vector2 offset = new Vector2(0f, -0.5f);
 
-    // Ground Check Proper; Encapsulated for Reusability
-    public bool isGrounded { get; private set; }
+    // For Debugging
+    [SerializeField] public bool showGizmos = true;
 
-    void Update()
+    // Ground Check Proper; Encapsulated for Reusability
+    public bool IsGrounded { get; private set; }
+
+    void FixedUpdate()
+    {
+        GroundCheck();
+    }
+
+    private void GroundCheck()
     {
         Vector2 worldPos = (Vector2)transform.position + offset;
 
         switch (shape) // Checks for shapes
         {
             case shapeType.Capsule:
-                isGrounded = Physics2D.OverlapCapsule(
+                IsGrounded = Physics2D.OverlapCapsule(
                    worldPos,                            // Position of the check
                    size,                                // Size
                    CapsuleDirection2D.Vertical,         // Capsule Direction
@@ -41,7 +49,7 @@ public class ground_check : MonoBehaviour
                 break;
 
             case shapeType.Box:
-                isGrounded = Physics2D.OverlapBox(
+                IsGrounded = Physics2D.OverlapBox(
                     worldPos,
                     size,
                     0f,
@@ -50,15 +58,29 @@ public class ground_check : MonoBehaviour
 
                 break;
         }
+
     }
 
-    void OnDrawGizmosSelected() // Visualizer in Editor
+    void OnDrawGizmosSelected()
     {
-        Gizmos.color = Color.green;
+        if (!showGizmos) return;
+
+        Gizmos.color = IsGrounded ? Color.green : Color.red;
         Vector2 worldPos = (Vector2)transform.position + offset;
 
-        Gizmos.DrawWireCube(worldPos, size);
-  
+        if (shape == shapeType.Box)
+        {
+            Gizmos.DrawWireCube(worldPos, size);
+        }
+        else if (shape == shapeType.Capsule)
+        {
+            // Capsule Visualizer
+            Gizmos.DrawWireSphere(worldPos + Vector2.up * (size.y / 2 - radius), radius);
+            Gizmos.DrawWireSphere(worldPos - Vector2.up * (size.y / 2 - radius), radius);
+            Gizmos.DrawLine(worldPos + new Vector2(-radius, size.y / 2 - radius), worldPos + new Vector2(-radius, -size.y / 2 + radius));
+            Gizmos.DrawLine(worldPos + new Vector2(radius, size.y / 2 - radius), worldPos + new Vector2(radius, -size.y / 2 + radius));
+        }
+
     }
 
 }
